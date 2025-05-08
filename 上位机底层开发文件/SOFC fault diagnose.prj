@@ -1,0 +1,107 @@
+<deployment-project plugin="plugin.apptool" plugin-version="1.0">
+  <configuration build-checksum="1280039689" file="F:\matalable文件\毕业设计\GUI界面\1.1\SOFC fault diagnose.prj" location="F:\matalable文件\毕业设计\GUI界面\1.1" name="SOFC fault diagnose" target="target.mlapps" target-name="打包为 App">
+    <param.appname>SOFC fault diagnose</param.appname>
+    <param.authnamewatermark>xuexilao</param.authnamewatermark>
+    <param.email>wwj841200@163.com</param.email>
+    <param.company>西南科技大学制造科学与工程学院</param.company>
+    <param.icon>${PROJECT_ROOT}\SOFC fault diagnose_resources\icon_24.png</param.icon>
+    <param.icons>
+      <file>${PROJECT_ROOT}\SOFC fault diagnose_resources\icon_48.png</file>
+      <file>${PROJECT_ROOT}\SOFC fault diagnose_resources\icon_24.png</file>
+      <file>${PROJECT_ROOT}\SOFC fault diagnose_resources\icon_16.png</file>
+    </param.icons>
+    <param.summary>对串口接收到的SOFC的11个特征进行处理后，实时进行故障诊断</param.summary>
+    <param.description>11个特征分别为：输出电流，输出电压，输出功率，氢气分压，氢气摩尔流量，氧气分压，氧气摩尔流量，水蒸气分压，水蒸气摩尔流量，阳极交换电流密度，阴极交换电流密度
+4类样本：正常样本，电堆泄露故障，鼓风机故障，热交换器故障</param.description>
+    <param.screenshot>C:\Users\86133\AppData\Local\Temp\tp10291314_e04a_436f_baee_e042fa116db2.png</param.screenshot>
+    <param.version>1.2</param.version>
+    <param.products.name />
+    <param.products.id />
+    <param.products.version />
+    <param.platforms />
+    <param.output>F:\matalable文件\毕业设计\GUI界面\SOFC_1.1</param.output>
+    <param.guid>3ba3acd5-f823-4b15-a96f-2ea480d4642a</param.guid>
+    <unset>
+      <param.products.name />
+      <param.products.id />
+      <param.products.version />
+      <param.platforms />
+    </unset>
+    <fileset.main>
+      <file>${PROJECT_ROOT}\SOFC_fault_diagnose_1_1.mlapp</file>
+    </fileset.main>
+    <fileset.depfun>
+      <file>${PROJECT_ROOT}\adjust_ylim.m</file>
+      <file>${PROJECT_ROOT}\get_com_ports.m</file>
+      <file>${PROJECT_ROOT}\GWO_GRU_NET97.05.mat</file>
+      <file>${PROJECT_ROOT}\GWO_GRU_NET97.16.mat</file>
+      <file>${PROJECT_ROOT}\lambda.mat</file>
+      <file>${PROJECT_ROOT}\PCA_dimension.m</file>
+      <file>${PROJECT_ROOT}\standard_data.mat</file>
+      <file>${PROJECT_ROOT}\train_data.mat</file>
+      <file>${PROJECT_ROOT}\updateTimeHandler.m</file>
+    </fileset.depfun>
+    <fileset.resources />
+    <fileset.package />
+    <build-deliverables>
+      <file location="F:\matalable文件\毕业设计\GUI界面" name="SOFC_1.1" optional="false">F:\matalable文件\毕业设计\GUI界面\SOFC_1.1</file>
+    </build-deliverables>
+    <workflow />
+    <matlab>
+      <root>D:\program files\MATLAB\R2022b</root>
+      <toolboxes>
+        <toolbox name="matlabcoder" />
+        <toolbox name="embeddedcoder" />
+        <toolbox name="gpucoder" />
+        <toolbox name="fixedpoint" />
+        <toolbox name="matlabhdlcoder" />
+        <toolbox name="neuralnetwork" />
+      </toolboxes>
+      <toolbox>
+        <matlabcoder>
+          <enabled>true</enabled>
+        </matlabcoder>
+      </toolbox>
+      <toolbox>
+        <embeddedcoder>
+          <enabled>true</enabled>
+        </embeddedcoder>
+      </toolbox>
+      <toolbox>
+        <gpucoder>
+          <enabled>true</enabled>
+        </gpucoder>
+      </toolbox>
+      <toolbox>
+        <fixedpoint>
+          <enabled>true</enabled>
+        </fixedpoint>
+      </toolbox>
+      <toolbox>
+        <matlabhdlcoder>
+          <enabled>true</enabled>
+        </matlabhdlcoder>
+      </toolbox>
+      <toolbox>
+        <neuralnetwork>
+          <enabled>true</enabled>
+        </neuralnetwork>
+      </toolbox>
+    </matlab>
+    <platform>
+      <unix>false</unix>
+      <mac>false</mac>
+      <windows>true</windows>
+      <win2k>false</win2k>
+      <winxp>false</winxp>
+      <vista>false</vista>
+      <linux>false</linux>
+      <solaris>false</solaris>
+      <osver>10.0</osver>
+      <os32>false</os32>
+      <os64>true</os64>
+      <arch>win64</arch>
+      <matlab>true</matlab>
+    </platform>
+  </configuration>
+</deployment-project>

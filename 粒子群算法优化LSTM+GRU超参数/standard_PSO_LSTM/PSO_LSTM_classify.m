@@ -1,0 +1,217 @@
+clc
+clear;close all
+clear functions
+%% 导入数据，生成乱序数组
+load F:\matalable文件\毕业设计\数据\PCA处理后数据+特征隐藏后数据\data.mat
+iris_data=data_finish;         %导入数据
+arry=randperm(10830);
+%% 划分数据
+input_train = iris_data(arry(1:7581),1:4)';
+output_train = iris_data(arry(1:7581),5)';
+input_test = iris_data(arry(7582:end),1:4)';
+output_test = iris_data(arry(7582:end),5)';
+
+% 节点个数
+input_num = 4;                    %4个特征
+hidden_num = 7;                   %隐藏层神经元
+output_num = 4;                   %输出类别
+%% 把输出1维转换为4维[1 0 0 0] [0 1 0 0] [0 0 1 0] [0 0 0 1]
+output=zeros(7581,4);
+for i=1:7581
+    switch output_train(i)
+        case 1
+        output(i,:)=[1 0 0 0];
+        case 2
+        output(i,:)=[0 1 0 0];
+        case 3
+        output(i,:)=[0 0 1 0];
+        case 4
+        output(i,:)=[0 0 0 1];
+    end
+end
+[xx,output]=max(output,[],2);
+
+output=categorical(output);
+output2=categorical(output_test);
+%可以使用ind2vec函数
+%% 数据归一化
+method=@mapminmax;                 %最大归一化
+%method=@mapstd;                   %标准归一化
+[input,inputs] = method(input_train);
+%[output,outputs] = method(output_train);
+input_test_guiyi = method('apply',input_test,inputs);
+
+%%  数据平铺
+% 将数据平铺成1维数据只是一种处理方式
+% 也可以平铺成2维数据，以及3维数据，需要修改对应模型结构
+% 但是应该始终和输入层数据结构保持一致
+input =  double(reshape(input, 4, 1, 1, 7581));
+input_test_guiyi  =  double(reshape(input_test_guiyi , 4, 1, 1, 3249));
+Input=cell(7581,1);
+Input_test_guiyi=cell(3249,1);
+for i = 1 : 7581
+    Input{i, 1} = input(:, 1, 1, i);
+end
+for i=1:3249
+    Input_test_guiyi{i, 1} = input_test_guiyi( :, 1, 1, i);
+end
+
+%% 定义PSO算法参数 
+D = 4;                        %粒子维数 %优化参数个数
+N = 40;                       %群体粒子个数
+T = 50;                       %最大迭代次数
+%创建权重和学习因子结构体
+% c_w.c1_min=                   %学习因子 1
+% c_w.c1_max=                    
+% c_w.c2_min=                   %学习因子 2
+% c_w.c2_max=
+c_w.w_min=0.4;              %惯性权重
+c_w.w_max=0.9;
+c1=2;
+c2=2;
+      
+Xmax = [0.1 0.1 256 128];     %位置最大值
+Xmin = [1e-4 1e-4 10 32];     %位置最小值
+Vmax = [2e-4 2e-4 2 2];       %速度最大值
+Vmin = [-2e-4 -2e-4 -2 -2];   %速度最小值
+
+%% 模型优化
+%初始化种群个体(限定位置和速度)
+x = rand(N,D);
+x = x.*(Xmax(1,:)-Xmin(1,:))+Xmin(1,:);
+% x(:,1) = x(:,1) * (Xmax(1,1)-Xmin(1,1))+Xmin(1,1);                 %边界不一样，需要对每一个优化参数单独处理
+% x(:,2) = x(:,2) * (Xmax(1,2)-Xmin(1,2))+Xmin(1,2);
+
+v = rand(N,D);
+v = v.*(Vmax(1,:)-Vmin(1,:))+Vmin(1,:);%调整一下最小批次和隐藏神经元个数//均匀分布初始化
+% v(:,1) = v(:,1) * (Vmax(:,1)-Vmin(:,1))+Vmin(:,1);                 %边界不一样，需要对每一个优化参数单独处理
+% v(:,2) = v(:,2) * (Vmax(:,2)-Vmin(:,2))+Vmin(:,2);
+%% 初始化个体最优位置和最优值
+p = x;                         %每一个个体最优的参数矩阵
+pbest = ones(N,1);             %个体历史最优
+for i = 1:N
+    fprintf('初始化粒子：%d\n',i)
+    pbest(i)=RNN_Bpfun(x(i,:),Input,output,Input_test_guiyi,output_test,N,T);
+end
+%% 初始化全局最优位置和最优值
+g = ones(1,D);                 %最优个体
+gbest = inf;                   %全局最优个体
+for i = 1:N
+    if(pbest(i) < gbest)
+        g = p(i,:);
+        gbest = pbest(i);
+    end
+end
+gb = ones(1,T);                %每代全局最优
+%% 取出每一代最优值的索引
+idex_pr=zeros(1,T);%每一代最优值的索引
+idex_fitness=inf;
+position_total=zeros(N*T,4);
+
+%% 按照公式依次迭代直到满足精度或者迭代次数
+for i = 1:T
+    idex_fitness=inf;%每代运行前重置，保证每一代都能正常获取到最优值索引
+    position_total((i-1)*N+(1:N),:)=x;%获取所有粒子的所有位置
+    % 线性权重递减   
+    w=c_w.w_max-(c_w.w_max-c_w.w_min)/T*i;
+    
+    for j = 1:N
+        fprintf('粒子数迭代：%d\n',j)
+        %更新个体最优位置和最优值
+        adapt_value=RNN_Bpfun(x(j,:),Input,output,Input_test_guiyi,output_test,N,T);      %自适应度函数（目标函数）
+        if adapt_value<idex_fitness              %读取每一代中最优索引
+           idex_fitness=adapt_value;
+           idex_pr(1,i)=j;
+        end
+
+        if (adapt_value < pbest(j))
+            p(j,:) = x(j,:);
+            pbest(j) = adapt_value;
+        end
+        %更新全局最优位置和最优值
+        if(pbest(j) < gbest)
+            g = p(j,:);
+            gbest = pbest(j);
+        end
+        %更新位置和速度值
+        v(j,:) = w*v(j,:)+c1*rand*(p(j,:)-x(j,:))...
+            +c2*rand*(g-x(j,:));%p为粒子历史最优，g为全局最优
+        x(j,:) = x(j,:)+v(j,:);
+        %边界条件处理
+        for ii = 1:D  %重置法处理边界
+            if (v(j,ii) > Vmax(:,ii)) || (v(j,ii) < Vmin(:,ii)) % #ok<warning_number>
+                v(j,ii) = rand * (Vmax(:,ii)-Vmin(:,ii))+Vmin(:,ii);              %重置一个值，或者限制在最大值和最小值
+            end
+            if (x(j,ii) > Xmax(:,ii)) || (x(j,ii) < Xmin(:,ii)) 
+                x(j,ii) = rand * (Xmax(:,ii)-Xmin(:,ii))+Xmin(:,ii);
+            end
+        end
+
+%         for ii = 1:D  %直接法处理边界
+%             if v(j,ii) > Vmax(:,ii)      % #ok<warning_number>
+%                v(j,ii)=Vmax(:,ii);
+%             elseif v(j,ii) < Vmin(:,ii)
+%                v(j,ii)=Vmin(:,ii);
+%             end
+%             if x(j,ii) > Xmax(:,ii)
+%                x(j,ii)=Xmax(:,ii);
+%             elseif x(j,ii) < Xmin(:,ii)
+%                 x(j,ii)=Xmin(:,ii);
+%             end
+%         end
+    end
+    %记录历代全局最优值
+    fprintf('粒子群优化代数：%d\n',i)
+    gb(i) = gbest;
+end
+
+
+%% 绘图
+unique_value=unique(gb);      %取出fitness中的唯一值从小到大排列
+unique_value=unique_value(end:-1:1);         %从大到小排列
+unique_idex=zeros(size(unique_value,2),1);   %设置初始索引
+for i=1:size(unique_value,2)                 %取出唯一值出现位置
+   unique_idex(i)=find(gb==unique_value(i),1,"first");%取出唯一值第一次出现的索引值
+end
+accurate_idex=zeros(size(unique_value,2),1);   %设置初始索引
+for i=1:size(unique_value,2)%取出值第一次出现时的索引
+  accurate_idex(i)=find(macro_f1==(-unique_value(i)),1,"first");
+end
+
+% 取出准确率
+accurate_final=zeros(1,length(gb));%初始化一个与fitness相同长度+1的数据
+for i=1:size(accurate_idex)%平铺数据，把准确率的位置按照fitness对应的位置输出来
+    if i==1
+      accurate_final(1,1:(unique_idex(i+1)-1))=accurate(accurate_idex(i));
+    elseif i==size(accurate_idex,1)
+      accurate_final(1,unique_idex(i):end)=accurate(accurate_idex(i));
+    else
+      accurate_final(1,unique_idex(i):(unique_idex(i+1)-1))=...
+      accurate(accurate_idex(i));
+    end
+end
+accurate_final=accurate_final*100;
+
+% 取出精确率和召回率
+precision_final=zeros(4,length(gb));%初始化一个与fitness相同长度+1的数据
+recall_final=zeros(4,length(gb));%初始化一个与fitness相同长度+1的数据
+for i=1:size(accurate_idex)%平铺数据，把准确率的位置按照fitness对应的位置输出来
+    if i==1%单独处理下界
+      for j=1:4
+         precision_final(j,1:(unique_idex(i+1)-1))=precision(j,accurate_idex(i));
+         recall_final(j,1:(unique_idex(i+1)-1))=recall(j,accurate_idex(i));
+      end
+    elseif i==size(accurate_idex,1)%单独处理上界
+      for j=1:4
+         precision_final(j,unique_idex(i):end)=precision(j,accurate_idex(i));
+         recall_final(j,unique_idex(i):end)=recall(j,accurate_idex(i));
+      end
+    else
+      for j=1:4
+         precision_final(j,unique_idex(i):(unique_idex(i+1)-1))=...
+         precision(j,accurate_idex(i));
+         recall_final(j,unique_idex(i):(unique_idex(i+1)-1))=...
+         recall(j,accurate_idex(i));
+      end
+    end
+end
